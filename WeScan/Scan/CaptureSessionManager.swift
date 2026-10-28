@@ -48,6 +48,11 @@ open class CaptureSessionManager: NSObject, AVCaptureVideoDataOutputSampleBuffer
     private let rectangleFunnel = RectangleFeaturesFunnel()
     weak var delegate: RectangleDetectionDelegateProtocol?
     private var displayedRectangleResult: RectangleDetectorResult?
+    /// The outline on screen when the shutter was tapped, used for the captured photo's corners.
+    /// Detection keeps running until the photo is processed, and a few missed frames in that gap
+    /// (e.g. from the tap shaking the phone) would otherwise clear `displayedRectangleResult`
+    /// and deliver the photo with no corners.
+    private var rectangleResultAtShutter: RectangleDetectorResult?
     private var photoOutput = AVCapturePhotoOutput()
     
     /// Whether the CaptureSessionManager should be detecting quadrilaterals.
@@ -129,7 +134,9 @@ open class CaptureSessionManager: NSObject, AVCaptureVideoDataOutputSampleBuffer
         let photoSettings = AVCapturePhotoSettings()
         photoSettings.isHighResolutionPhotoEnabled = true
         photoSettings.isAutoStillImageStabilizationEnabled = true
-        
+
+        rectangleResultAtShutter = displayedRectangleResult
+
         if let photoOutputConnection = self.photoOutput.connection(with: .video) {
             photoOutputConnection.videoOrientation = AVCaptureVideoOrientation(deviceOrientation: UIDevice.current.orientation) ?? AVCaptureVideoOrientation.portrait
         }
@@ -236,6 +243,8 @@ extension CaptureSessionManager: AVCapturePhotoCaptureDelegate {
     /// Completes the image capture by processing the image, and passing it to the delegate object.
     /// This function is necessary because the capture functions for iOS 10 and 11 are decoupled.
     private func completeImageCapture(with imageData: Data) {
+        let rectangleResult = rectangleResultAtShutter ?? displayedRectangleResult
+        rectangleResultAtShutter = nil
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard var image = UIImage(data: imageData) else {
                 let error = ImageScannerControllerError.capture
@@ -262,9 +271,9 @@ extension CaptureSessionManager: AVCapturePhotoCaptureDelegate {
             image = image.applyingPortraitOrientation()
             
             var quad: Quadrilateral?
-            if let displayedRectangleResult = self?.displayedRectangleResult {
-                quad = self?.displayRectangleResult(rectangleResult: displayedRectangleResult)
-                quad = quad?.scale(displayedRectangleResult.imageSize, image.size, withRotationAngle: angle)
+            if let rectangleResult = rectangleResult {
+                quad = self?.displayRectangleResult(rectangleResult: rectangleResult)
+                quad = quad?.scale(rectangleResult.imageSize, image.size, withRotationAngle: angle)
             }
             
             DispatchQueue.main.async {

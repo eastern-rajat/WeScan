@@ -31,7 +31,8 @@ public struct Quadrilateral: Transformable {
         self.bottomRight = rectangleFeature.bottomRight
     }
     
-    init(topLeft: CGPoint, topRight: CGPoint, bottomRight: CGPoint, bottomLeft: CGPoint) {
+    /// Public so the host app can supply a starting crop box for images WeScan detected no corners on.
+    public init(topLeft: CGPoint, topRight: CGPoint, bottomRight: CGPoint, bottomLeft: CGPoint) {
         self.topLeft = topLeft
         self.topRight = topRight
         self.bottomRight = bottomRight
