@@ -13,10 +13,10 @@ import AVFoundation
 open class ScannerViewController: UIViewController {
     
     open var captureSessionManager: CaptureSessionManager?
-    open let videoPreviewlayer = AVCaptureVideoPreviewLayer()
+    public let videoPreviewlayer = AVCaptureVideoPreviewLayer()
     
     /// The view that draws the detected rectangles.
-    open let quadView = QuadrilateralView()
+    public let quadView = QuadrilateralView()
     
     var shutterButton: ShutterButton = {
         let button = ShutterButton()
@@ -26,7 +26,7 @@ open class ScannerViewController: UIViewController {
     }()
     
     lazy private var activityIndicator: UIActivityIndicatorView = {
-        let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .gray)
+        let activityIndicator = UIActivityIndicatorView(style: .gray)
         activityIndicator.hidesWhenStopped = true
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
         return activityIndicator
